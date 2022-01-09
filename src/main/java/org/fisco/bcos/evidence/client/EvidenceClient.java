@@ -2,13 +2,16 @@ package org.fisco.bcos.evidence.client;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileInputStream; //plus
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Properties;
 import org.fisco.bcos.evidence.contract.EvidenceFactory;
 import org.fisco.bcos.sdk.BcosSDK;
+import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple1;
 import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple2;
+import org.fisco.bcos.sdk.abi.datatypes.generated.tuples.generated.Tuple3;
 import org.fisco.bcos.sdk.client.Client;
 import org.fisco.bcos.sdk.crypto.keypair.CryptoKeyPair;
 import org.fisco.bcos.sdk.model.TransactionReceipt;
@@ -19,6 +22,11 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+
+
+import java.util.ArrayList; // ArrayList
+import java.util.Arrays; //Array
 
 public class EvidenceClient {
 
@@ -34,122 +42,124 @@ public class EvidenceClient {
         new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
     bcosSDK = context.getBean(BcosSDK.class);
     client = bcosSDK.getClient(1);
-    cryptoKeyPair = client.getCryptoSuite().createKeyPair();
+
+    String privkey = loadPrivKey();
+
+    cryptoKeyPair = client.getCryptoSuite().createKeyPair(privkey);
     client.getCryptoSuite().setCryptoKeyPair(cryptoKeyPair);
     logger.debug("create client for group1, account address is " + cryptoKeyPair.getAddress());
-    // 随机生成合约部署者
   }
 
-//  public void deployAssetAndRecordAddr() {
-//
-//    try {
-//      Asset asset = Asset.deploy(client, cryptoKeyPair);
-//      System.out.println(
-//          " deploy Asset success, contract address is " + asset.getContractAddress());
-//
-//      recordAssetAddr(asset.getContractAddress());
-//    } catch (Exception e) {
-//      // TODO Auto-generated catch block
-//      // e.printStackTrace();
-//      System.out.println(" deploy Asset contract failed, error message is  " + e.getMessage());
-//    }
-//  }
-//
-//  public void recordAssetAddr(String address) throws FileNotFoundException, IOException {
-//    Properties prop = new Properties();
-//    prop.setProperty("address", address);
-//    final Resource contractResource = new ClassPathResource("contract.properties");
-//    FileOutputStream fileOutputStream = new FileOutputStream(contractResource.getFile());
-//    prop.store(fileOutputStream, "contract address");
-//  }
-//
-//
-//  public String loadAssetAddr() throws Exception {
-//    // load Asset contact address from contract.properties
-//    Properties prop = new Properties();
-//    final Resource contractResource = new ClassPathResource("contract.properties");
-//    prop.load(contractResource.getInputStream());
-//
-//    String contractAddress = prop.getProperty("address");
-//    if (contractAddress == null || contractAddress.trim().equals("")) {
-//      throw new Exception(" load Asset contract address failed, please deploy it first. ");
-//    }
-//    logger.info(" load Asset address from contract.properties, address is {}", contractAddress);
-//    return contractAddress;
-//  }
-//
-//  public void queryAssetAmount(String assetAccount) {
-//    try {
-//      String contractAddress = loadAssetAddr();
-//      Asset asset = Asset.load(contractAddress, client, cryptoKeyPair);
-//      Tuple2<BigInteger, BigInteger> result = asset.select(assetAccount);
-//      if (result.getValue1().compareTo(new BigInteger("0")) == 0) {
-//        System.out.printf(" asset account %s, value %s \n", assetAccount, result.getValue2());
-//      } else {
-//        System.out.printf(" %s asset account is not exist \n", assetAccount);
-//      }
-//    } catch (Exception e) {
-//      // TODO Auto-generated catch block
-//      // e.printStackTrace();
-//      logger.error(" queryAssetAmount exception, error message is {}", e.getMessage());
-//
-//      System.out.printf(" query asset account failed, error message is %s\n", e.getMessage());
-//    }
-//  }
-//
-//  public void registerAssetAccount(String assetAccount, BigInteger amount) {
-//    try {
-//      String contractAddress = loadAssetAddr();
-//
-//      Asset asset = Asset.load(contractAddress, client, cryptoKeyPair);
-//      TransactionReceipt receipt = asset.register(assetAccount, amount);
-//      List<Asset.RegisterEventEventResponse> response = asset.getRegisterEventEvents(receipt);
-//      if (!response.isEmpty()) {
-//        if (response.get(0).ret.compareTo(new BigInteger("0")) == 0) {
-//          System.out.printf(
-//              " register asset account success => asset: %s, value: %s \n", assetAccount, amount);
-//        } else {
-//          System.out.printf(
-//              " register asset account failed, ret code is %s \n", response.get(0).ret.toString());
-//        }
-//      } else {
-//        System.out.println(" event log not found, maybe transaction not exec. ");
-//      }
-//    } catch (Exception e) {
-//      // TODO Auto-generated catch block
-//      // e.printStackTrace();
-//
-//      logger.error(" registerAssetAccount exception, error message is {}", e.getMessage());
-//      System.out.printf(" register asset account failed, error message is %s\n", e.getMessage());
-//    }
-//  }
-//
-//  public void transferAsset(String fromAssetAccount, String toAssetAccount, BigInteger amount) {
-//    try {
-//      String contractAddress = loadAssetAddr();
-//      Asset asset = Asset.load(contractAddress, client, cryptoKeyPair);
-//      TransactionReceipt receipt = asset.transfer(fromAssetAccount, toAssetAccount, amount);
-//      List<Asset.TransferEventEventResponse> response = asset.getTransferEventEvents(receipt);
-//      if (!response.isEmpty()) {
-//        if (response.get(0).ret.compareTo(new BigInteger("0")) == 0) {
-//          System.out.printf(
-//              " transfer success => from_asset: %s, to_asset: %s, amount: %s \n",
-//              fromAssetAccount, toAssetAccount, amount);
-//        } else {
-//          System.out.printf(
-//              " transfer asset account failed, ret code is %s \n", response.get(0).ret.toString());
-//        }
-//      } else {
-//        System.out.println(" event log not found, maybe transaction not exec. ");
-//      }
-//    } catch (Exception e) {
-//      // TODO Auto-generated catch block
-//      // e.printStackTrace();
-//
-//      logger.error(" registerAssetAccount exception, error message is {}", e.getMessage());
-//      System.out.printf(" register asset account failed, error message is %s\n", e.getMessage());
-//    }
-//  }
+  public String loadPrivKey() throws Exception {
+    Properties prop = new Properties();
+    final Resource contractResource = new ClassPathResource("contract.properties");
+    prop.load(contractResource.getInputStream());
+    String privkey = prop.getProperty("priv_key");
+    if (privkey == null) {
+      throw new Exception(" priv key is not exist in the properties. ");
+    }
+    logger.info(" load priv key success", privkey);
+    return privkey;
+  }
+
+  public void deployEviFacAndRecordAddr(String addr_list_raw) {
+    try {
+      List<String> addr_list = new ArrayList<String>(Arrays.asList(addr_list_raw.split(",")));
+      EvidenceFactory eviFac = EvidenceFactory.deploy(client, cryptoKeyPair, addr_list);
+      System.out.println(
+          " deploy Evidence success, contract address is " + eviFac.getContractAddress());
+
+      recordEviFacAddr(eviFac.getContractAddress(), addr_list_raw);
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      // e.printStackTrace();
+      System.out.println(" deploy Evidence contract failed, error message is  " + e.getMessage());
+    }
+  }
+
+  // update
+  public void recordEviFacAddr(String address, String signers) throws FileNotFoundException, IOException {
+    Properties prop = new Properties();
+
+    prop.load(new FileInputStream("conf/contract.properties")); // 追加写入
+
+    prop.setProperty("address", address);
+    prop.setProperty("signers", signers);
+
+    prop.store(new FileOutputStream("conf/contract.properties"),"priv/contract/signers");
+  }
+
+  public String loadEviAddr() throws Exception {
+    // load Asset contact address from contract.properties
+    Properties prop = new Properties();
+    final Resource contractResource = new ClassPathResource("contract.properties");
+    prop.load(contractResource.getInputStream());
+
+    String contractAddress = prop.getProperty("address");
+    if (contractAddress == null || contractAddress.trim().equals("")) {
+      throw new Exception(" load Evi contract address failed, please deploy it first. ");
+    }
+    logger.info(" load Asset Evi from contract.properties, address is {}", contractAddress);
+    return contractAddress;
+  }
+
+  public void getSigners(){
+    try {
+      String contractAddress = loadEviAddr();
+      EvidenceFactory evi = EvidenceFactory.load(contractAddress, client, cryptoKeyPair);
+      List signers = evi.getSigners();
+      System.out.printf(" signers are %s \n", signers);
+    }  catch (Exception e) {
+      System.out.println(" getSigners failed, error message is  " + e.getMessage());
+    }
+  }
+
+  public void newEvidence(String evidence){
+    try {
+      String contractAddress = loadEviAddr();
+      EvidenceFactory evi = EvidenceFactory.load(contractAddress, client, cryptoKeyPair);
+      TransactionReceipt receipt = evi.newEvidence(evidence);
+      List<EvidenceFactory.NewEvidenceEventEventResponse> responses = evi.getNewEvidenceEventEvents(receipt);
+      if (!responses.isEmpty()) {
+        System.out.printf("key of evidence %s is %s \n", evidence, responses.get(0).addr);
+      } else {
+        System.out.println(" event log not found, maybe transaction not exec. ");
+      }
+    }  catch (Exception e) {
+      System.out.println(" newEvidence failed, error message is  " + e.getMessage());
+    }
+  }
+
+  public void getEvidence(String key){
+    try{
+      String contractAddress = loadEviAddr();
+      EvidenceFactory evi = EvidenceFactory.load(contractAddress, client, cryptoKeyPair);
+      Tuple3<String, List<String>, List<String>> result = evi.getEvidence(key);
+      System.out.printf("evidence value is %s\n", result.getValue1());
+      System.out.printf("evidence signers are %s\n", result.getValue2());
+      System.out.printf("evidence signed singers are %s\n", result.getValue3());
+
+    }  catch (Exception e) {
+      System.out.println("getEvidence failed, error message is  " + e.getMessage());
+    }
+  }
+
+  public void addSignatures(String privkey, String key){
+    try{
+      String contractAddress = loadEviAddr();
+      CryptoKeyPair tx_sender = client.getCryptoSuite().createKeyPair(privkey);
+      EvidenceFactory evi = EvidenceFactory.load(contractAddress, client, tx_sender);
+      TransactionReceipt receipt = evi.addSignatures(key);
+      Tuple1<Boolean> result = evi.getAddSignaturesOutput(receipt);
+      String payload = "";
+      if (result.getValue1() == true) {
+        payload = "success";
+      }
+      System.out.printf("addSignature is %s", payload);
+    } catch(Exception e){
+      System.out.println("addSignatures failed, error message is  " + e.getMessage());
+    }
+  }
 
   public static void Usage() {
     System.out.println(" Usage:");
@@ -173,33 +183,24 @@ public class EvidenceClient {
     EvidenceClient client = new EvidenceClient();
     client.initialize();
 
-//    switch (args[0]) {
-//      case "deploy":
-//        client.deployAssetAndRecordAddr();
-//        break;
-//      case "query":
-//        if (args.length < 2) {
-//          Usage();
-//        }
-//        client.queryAssetAmount(args[1]);
-//        break;
-//      case "register":
-//        if (args.length < 3) {
-//          Usage();
-//        }
-//        client.registerAssetAccount(args[1], new BigInteger(args[2]));
-//        break;
-//      case "transfer":
-//        if (args.length < 4) {
-//          Usage();
-//        }
-//        client.transferAsset(args[1], args[2], new BigInteger(args[3]));
-//        break;
-//      default:
-//        {
-//          Usage();
-//        }
-//    }
+    switch (args[0]) {
+      case "deploy":
+        client.deployEviFacAndRecordAddr(args[1]);
+        break;
+      case "getSigners":
+        client.getSigners();
+        break;
+      case "newEvidence":
+        client.newEvidence(args[1]);
+        break;
+      case "getEvidence":
+        client.getEvidence(args[1]);
+        break;
+      case "addSignatures":
+        client.addSignatures(args[1], args[2]);
+        break;
+    }
+
     System.exit(0);
   }
 }
