@@ -35,7 +35,7 @@ dependencies {
     compile logger
     runtime logger
     // IMPORTANT
-    compile ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:2.8.0-SNAPSHOT")
+    compile ("org.fisco-bcos.java-sdk:fisco-bcos-java-sdk:2.7.2")
     compile spring
 }
 
